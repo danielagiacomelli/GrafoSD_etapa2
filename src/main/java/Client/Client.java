@@ -1,8 +1,8 @@
 package Client;
 
-import Project.Metodos;
+
+import Project.Dijkstra;
 import grafos.*;
-import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -10,9 +10,7 @@ import org.apache.thrift.transport.TTransport;
 import Project.Arquivo;
 import org.apache.thrift.transport.TTransportException;
 
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
@@ -181,59 +179,53 @@ public class Client {
                         }
 
                         break;
-                    /*case 9:
-                        List<Vertice> listVertice = new ArrayList<Vertice>();
-                        System.out.println("Digite o nome(id) do vertice: ");
-                        int verticeId = s.nextInt();
-
-                        for (int servidor = 0; servidor < 5; servidor++) {
-                            conecta_servidor(9090 + servidor);
-                            client.getVizinhos(verticeId);
-                            desconecta_servidor();
-                        }
-                        System.out.println(listVertice);
-                        break;
-                       */
                     case 9:
+                        Dijkstra dijkstra = new Dijkstra();
 
-                        //Matriz de Adjacencia
-                        List<Aresta> listaAresta = new ArrayList<Aresta>();
-                        List<Vertice> listaVertice = new ArrayList<Vertice>();
+                        List<Aresta> listaArestas = new ArrayList<Aresta>();
+                        List<Vertice> listaVertices = new ArrayList<Vertice>();
 
                         for (int j = 0; j < 5; j++) {
                             conecta_servidor(9090 + j);
                             List<Aresta> listaAux = client.getArestas();
                             for(int w=0; w< listaAux.size(); w++)
-                                listaAresta.add(listaAux.get(w));
+                                listaArestas.add(listaAux.get(w));
                             desconecta_servidor();
                         }
+
                         for (int j = 0; j < 5; j++) {
                             conecta_servidor(9090 + j);
                             List<Vertice> listaVerticeAux = client.getVertices();
                             for (int k = 0; k < listaVerticeAux.size(); k++) {
-                                listaVertice.add(listaVerticeAux.get(k));
+                                listaVertices.add(listaVerticeAux.get(k));
                             }
                             desconecta_servidor();
                         }
 
-                        int maior=0;
-                        for (int u=0; u<listaVertice.size(); u++){
-                            if (listaVertice.get(u).id > maior)
-                                maior = listaVertice.get(u).id;
-                        }
+                        int maior = 0;
 
+                        for(int z = 0; z<listaVertices.size(); z++){
+
+                            if(listaVertices.get(z).getId()>maior){
+                                maior = listaVertices.get(z).getId();
+                            }
+                        }
                         double[][] matriz = new double[maior+1][maior+1];
 
-                        for (int z = 0; z < listaAresta.size(); z++) {
-                            matriz[listaAresta.get(z).getVertice1()][listaAresta.get(z).getVertice2()] = listaAresta.get(z).getPeso();
-
-                        }
-                        for (int ja = 0; ja < listaVertice.size(); ja++) {
-                            for (int ka = 0; ka < listaVertice.size(); ka++)
-                                System.out.print(matriz[ja][ka]+ " ");
-                                System.out.println("\n");
+                        for (int i = 0; i < listaArestas.size(); i++) {
+                            matriz[listaArestas.get(i).getVertice1()][listaArestas.get(i).getVertice2()] = listaArestas.get(i).getPeso();
                         }
 
+                        System.out.println("Digite o vertice de origem: ");
+                        int origem = s.nextInt();
+
+                        System.out.println("Digite o vertice de destino: ");
+                        int destino = s.nextInt();
+
+                        dijkstra.menorDistancia(matriz, (maior+1), origem, destino, (ArrayList<Vertice>) listaVertices);
+
+
+                        break;
                     default:
                         System.out.println("Operação inválida, tente novamente");
                         break;
