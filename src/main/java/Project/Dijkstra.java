@@ -12,15 +12,13 @@ public class Dijkstra {
 
     static double min;
     static int next = 0;
-    static Metodos handler;
-    static Vertice vertice;
-
 
     public static void menorDistancia(double[][] matriz, int tamanho, int tag1, int tag2, ArrayList<Vertice> array){
 
         double distancia[] = new double[tamanho];
         int visitados[] = new int[tamanho];
         int pre[] = new int[tamanho];
+        int ultimo = tag2;
 
         //preenche os vertices que nao tem arestas adjacentes com 999
         for(int i=0; i<tamanho; i++){
@@ -38,34 +36,36 @@ public class Dijkstra {
 
         visitados[tag1] = 1;
 
-        for(int i=0; i<tamanho; i++){
-            min=999;
+        for(int i=0; i<tamanho; i++) {
+            min = 999;
 
-            for(int j=0; j<tamanho; j++){
+            for (int j = 0; j < tamanho; j++) {
 
                 //a variavel min recebe o menor peso de aresta
-                if(min>distancia[j] && visitados[j]!=1){
+                if (min > distancia[j] && visitados[j] != 1) {
                     min = distancia[j];
-                    visitados[j] = 1;
+                    next = j;
 
                 }
             }
 
+            visitados[next] = 1;
 
-            for(int k=0; k<tamanho; k++){
-                for(int c=0; c<tamanho; c++){
-                    if(visitados[c]!=1){
-                        if(min+matriz[k][c]<distancia[c]){
-                            distancia[c]= min+matriz[k][c];
-                            pre[c] = k;
-                        }
+            //verifica se a soma do minimo+proximo é menor que distancia
+            //se for, distancia[c] recebe a soma e o pre[c] guarda o vertice(no)
+            for (int c = 0; c < tamanho; c++) {
+                if (visitados[c] != 1) {
+                    if (min + matriz[next ][c ] < distancia[c]) {
+                        distancia[c] = min + matriz[next ][c ];
+                        pre[c] = next;
+                    }
 
                 }
-            }
-
             }
         }
+
         int j;
+
         if(distancia[tag2]==-1 || distancia[tag2]==999){
             System.out.println("\nCaminho: "+array.get(tag2).getId()+" Distância: "+999);
         }
@@ -74,8 +74,12 @@ public class Dijkstra {
                 if(v.getId() == tag2)
                     System.out.println("\nCaminho: de " + tag1 + " até " + v.getId()+" Distância: "+distancia[tag2]);
             }
+
         }
         j=tag2;
+
+        //imprime o caminho de forma inversa
+        System.out.println(" <- " + ultimo);
         do{
             j=pre[j];
             if(j!=0){
@@ -92,9 +96,6 @@ public class Dijkstra {
             pre[i]=0;
 
         }
-
-
     }
-
 }
 
