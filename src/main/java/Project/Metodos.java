@@ -2,6 +2,10 @@ package Project;
 
 
 import org.apache.thrift.TException;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -241,4 +245,16 @@ public class Metodos implements GrafoBD.Iface {
             return true;
         }
     }
+/*
+    public int defineServidor(int a, int b) throws NoSuchAlgorithmException {
+        String s = (a+"++"+b);
+        MessageDigest m = MessageDigest.getInstance("MD5");
+        m.update(s.getBytes(),0,s.length());
+        BigInteger big = new BigInteger(1,m.digest());
+        Integer i = new Integer(big.intValue());
+        i = Math.abs(i%5);
+        //System.out.println("Servidor: "+(i));
+        return i;
+    }
+    */
 }

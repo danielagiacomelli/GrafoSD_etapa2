@@ -3,13 +3,15 @@ package Client;
 
 import Project.Dijkstra;
 import grafos.*;
+import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import Project.Arquivo;
 import org.apache.thrift.transport.TTransportException;
-
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -29,8 +31,47 @@ public class Client {
         transport.close();
     }
 
+    public static int defineServidor(int a, int b) throws NoSuchAlgorithmException {
+        String s;
+        if(a>b){
+           s = a+"++"+b;
+        } else s = b+"++"+a;
+
+        MessageDigest m = MessageDigest.getInstance("MD5");
+        m.update(s.getBytes(),0,s.length());
+        BigInteger big = new BigInteger(1,m.digest());
+        Integer i = new Integer(big.intValue());
+        i = Math.abs(i%5);
+        //System.out.println("Servidor: "+(i));
+        return i;
+    }
+
+    public static List<Integer> getVizinhos(int vetId) throws TException {
+        List<Aresta> listaArestas = new ArrayList<Aresta>();
+        List<Aresta>  aux = new ArrayList<Aresta>();
+
+        for (int j = 0; j < 5; j++) {
+            conecta_servidor(9090 + j);
+            listaArestas = client.getArestas();
+            for (int k = 0; k < listaArestas.size(); k++) {
+                aux.add(listaArestas.get(k));
+            }
+            desconecta_servidor();
+        }
+
+        List<Integer> vizinhos = new ArrayList<Integer>();
+
+        for (int i = 0; i < aux.size(); i++) {
+            if (aux.get(i).getVertice1() == vetId) {
+                vizinhos.add(aux.get(i).getVertice2());
+            } else if (aux.get(i).getVertice2() == vetId) {
+                vizinhos.add(aux.get(i).getVertice1());
+            }
+        }
+        return vizinhos;
+    }
+
     public static void main(String[] args) {
-        Arquivo arq = new Arquivo();
         int op = 1;
 
         // **** Menu com as opções disponíveis ***
@@ -69,10 +110,12 @@ public class Client {
                         System.out.println("Vértice 1: ");
                         int vet1 = s.nextInt();
 
-                        conecta_servidor((vet1 % 5) + 9090);
-
                         System.out.println("Vértice 2: ");
                         int vet2 = s.nextInt();
+
+                        int p = defineServidor(vet1, vet2);
+                        p = p +9090;
+                        conecta_servidor(p);
 
                         System.out.println("Descrição: ");
                         s.nextLine();
@@ -92,28 +135,29 @@ public class Client {
                         System.out.println("Digite o nome (id) do vértice que deseja remover: ");
                         int id2 = s.nextInt();
 
+                        List<Integer> vizinhos = new ArrayList<Integer>();
+                        vizinhos = getVizinhos(id2);
+
                         conecta_servidor((id2 % 5) + 9090);
                         client.removeVertice(id2);
                         desconecta_servidor();
 
-
-                        for (int serv1 = 0; serv1 < 5; serv1++) {
-                            conecta_servidor(9090 + serv1);
-                            client.excluiAresta(id2);
+                        for (int viz = 0; viz < vizinhos.size(); viz++) {
+                            conecta_servidor(9090 + defineServidor(id2, vizinhos.get(viz)));
+                            client.removeAresta(id2, vizinhos.get(viz));
                             desconecta_servidor();
                         }
                         break;
-
                     case 4:
                         System.out.println("Digite as informações da aresta que deseja remover: ");
 
                         System.out.println("Vértice 1: ");
                         int vet1a = s.nextInt();
-                        conecta_servidor((vet1a % 5) + 9090);
 
                         System.out.println("Vértice 2: ");
                         int vet2a = s.nextInt();
 
+                        conecta_servidor(9090+defineServidor(vet1a, vet2a));
                         client.removeAresta(vet1a, vet2a);
                         desconecta_servidor();
                         break;
@@ -121,7 +165,6 @@ public class Client {
                         System.out.println("Digite os vertices da aresta que deseja atualizar: ");
                         System.out.println("Vértice 1: ");
                         int vet1b = s.nextInt();
-                        conecta_servidor((vet1b % 5) + 9090);
 
                         System.out.println("Vértice 2: ");
                         int vet2b = s.nextInt();
@@ -138,6 +181,7 @@ public class Client {
                         int direcionada4 = s.nextInt();
 
                         Aresta a2 = new Aresta(vet1b, vet2b, peso4, direcionada4, descricao4);
+                        conecta_servidor(9090+defineServidor(vet1b, vet2b));
                         client.updateAresta(vet1b, vet2b, a2);
                         desconecta_servidor();
                         break;
@@ -168,7 +212,6 @@ public class Client {
                             System.out.println(client.getVertices());
                             desconecta_servidor();
                         }
-
                         break;
                     case 8:
                         for (int serv = 0; serv < 5; serv++) {
@@ -177,7 +220,6 @@ public class Client {
                             System.out.println(client.getArestas());
                             desconecta_servidor();
                         }
-
                         break;
                     case 9:
                         Dijkstra dijkstra = new Dijkstra();
@@ -202,6 +244,7 @@ public class Client {
                             desconecta_servidor();
                         }
 
+
                         int maior = 0;
 
                         for(int z = 0; z<listaVertices.size(); z++){
@@ -211,6 +254,13 @@ public class Client {
                             }
                         }
                         double[][] matriz = new double[maior+1][maior+1];
+
+                        Vertice[] verticesArray = new Vertice[maior+1];
+
+                        for(int vet = 0; vet<listaVertices.size(); vet++){
+                            int ab = listaVertices.get(vet).getId();
+                            verticesArray[ab] = listaVertices.get(vet);
+                        }
 
                         for (int i = 0; i < listaArestas.size(); i++) {
                             matriz[listaArestas.get(i).getVertice1()][listaArestas.get(i).getVertice2()] = listaArestas.get(i).getPeso();
@@ -222,7 +272,7 @@ public class Client {
                         System.out.println("Digite o vertice de destino: ");
                         int destino = s.nextInt();
 
-                        dijkstra.menorDistancia(matriz, (maior+1), origem, destino, (ArrayList<Vertice>) listaVertices);
+                        dijkstra.menorDistancia(matriz, (maior+1), origem, destino, verticesArray);
 
 
                         break;
